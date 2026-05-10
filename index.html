@@ -3,71 +3,88 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monitoring Kombucha - Salma Final</title>
+    <title>Kombucha Monitoring Final - Salma</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        :root { --blue: #1a508b; --red: #c0392b; --green: #27ae60; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f9; margin: 0; padding: 20px; text-align: center; }
-        .nav-container { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; border-top: 5px solid var(--blue); position: relative; }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; }
+        :root { --blue: #1a508b; --red: #c0392b; --green: #27ae60; --light-bg: #f4f7f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--light-bg); margin: 0; padding: 20px; text-align: center; }
+        
+        /* Header & Nav */
+        .nav-container { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 15px; margin-bottom: 25px; border-top: 5px solid var(--blue); }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; color: white; transition: 0.3s; text-decoration: none; }
         .btn-start { background: var(--green); }
         .btn-stop { background: var(--red); }
-        .btn-excel { background: #217346; text-decoration: none; }
+        .btn-excel { background: #217346; }
+
         .interval-box { display: inline-flex; align-items: center; border: 2px solid #bcd0e7; border-radius: 50px; padding: 5px 15px; background: #f8faff; }
-        .interval-box input { border: none; width: 45px; text-align: center; font-size: 16px; outline: none; background: transparent; font-weight: bold; }
-        .status-text { font-size: 24px; font-weight: bold; color: var(--blue); margin-bottom: 20px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 1100px; margin: auto; }
+        .interval-box input { border: none; width: 45px; text-align: center; font-size: 16px; font-weight: bold; color: var(--blue); outline: none; background: transparent; }
+
+        /* Stats Card */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; max-width: 1200px; margin: auto; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .card h2 { margin: 10px 0 0; color: var(--blue); font-size: 32px; }
-        .charts { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; max-width: 1100px; margin: 25px auto; }
-        .chart-box { background: white; padding: 15px; border-radius: 15px; }
-        .table-container { max-width: 1100px; margin: 20px auto; background: white; padding: 20px; border-radius: 15px; }
+        .card h3 { font-size: 14px; color: #666; margin: 0; }
+        .card h2 { margin: 10px 0 0; color: var(--blue); font-size: 28px; }
+
+        /* Charts */
+        .charts-wrapper { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; max-width: 1200px; margin: 25px auto; }
+        .chart-box { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+
+        /* Table */
+        .table-container { max-width: 1200px; margin: 20px auto; background: white; padding: 20px; border-radius: 15px; overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #eee; text-align: center; }
+        th, td { padding: 12px; border: 1px solid #eee; text-align: center; }
         th { background: var(--blue); color: white; }
-        #overlayBahaya { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(192, 57, 43, 0.98); color: white; z-index: 99999; padding-top: 150px; font-weight: bold; animation: blinker 1s infinite; }
+
+        /* Danger Overlay */
+        #overlayBahaya { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(192, 57, 43, 0.98); color: white; z-index: 99999; padding-top: 100px; animation: blinker 1s infinite; }
         @keyframes blinker { 50% { opacity: 0.8; } }
-        .btn-tes { position: absolute; right: 10px; top: 10px; background: orange; color: black; font-size: 10px; padding: 5px; border-radius: 5px; cursor: pointer; }
+        .close-btn { background: white; color: var(--red); padding: 15px 40px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 20px; margin-top: 20px; }
     </style>
 </head>
-<body onclick="paksaAktifkanSuara()">
+<body onclick="bukaKunciAudio()">
 
     <div id="overlayBahaya">
-        <h1 style="font-size: 60px;">⚠️ BAHAYA! ⚠️</h1>
-        <p id="infoSuhu" style="font-size: 24px;">SUHU TIDAK STABIL</p>
-        <button onclick="tutupOverlay()" style="padding: 15px 40px; font-weight:bold; cursor:pointer; font-size: 20px;">MATIKAN ALARM</button>
+        <h1 style="font-size: 80px; margin: 0;">⚠️ BAHAYA! ⚠️</h1>
+        <h2 id="teksBahaya" style="font-size: 30px;">SUHU DI LUAR KENDALI</h2>
+        <button class="close-btn" onclick="tutupAlarm()">TUTUP ALARM</button>
     </div>
+
+    <h2 style="color: var(--blue);">IOT SYSTEM FERMENTASI KOMBUCHA</h2>
+    <p id="audioStatus" style="font-size: 11px; color: #777;">*Klik layar sekali saat mulai untuk mengaktifkan audio otomatis*</p>
 
     <div class="nav-container">
-        <div class="btn-tes" onclick="tesBicara()">🔊 TES SUARA</div>
-        <button class="btn btn-start" onclick="setPower(1)">START</button>
-        <button class="btn btn-stop" onclick="setPower(0)">STOP</button>
+        <button class="btn btn-start" onclick="setPower(1)">START ACTUATOR</button>
+        <button class="btn btn-stop" onclick="setPower(0)">STOP ACTUATOR</button>
+        
         <div class="interval-box">
-            <span>Update:</span><input type="number" id="inputDetik" value="5"><span>Detik</span>
-            <button onclick="updateInterval()" style="border:none; background:var(--blue); color:white; border-radius:10px; padding:5px 10px; cursor:pointer;">SET</button>
+            <span>Interval:</span>
+            <input type="number" id="inputDetik" value="5">
+            <span>Detik</span>
+            <button onclick="updateInterval()" style="margin-left:5px; border:none; background:var(--blue); color:white; border-radius:15px; padding:5px 12px; cursor:pointer;">SET</button>
         </div>
-        <a href="https://docs.google.com/spreadsheets/d/1pArZVTX4AHACQH8-VJW3zj4EObjJWmOTqOfX0WoAbBw/edit" target="_blank" class="btn btn-excel" style="color:white;">SHEETS</a>
+
+        <a href="https://docs.google.com/spreadsheets/d/1pArZVTX4AHACQH8-VJW3zj4EObjJWmOTqOfX0WoAbBw/edit" target="_blank" class="btn btn-excel">GOOGLE SHEETS</a>
     </div>
 
-    <div class="status-text">SISTEM: <span id="statusSistem">--</span></div>
-
     <div class="grid">
-        <div class="card"><h3>T1</h3><h2 id="t1">--</h2></div>
-        <div class="card"><h3>T2</h3><h2 id="t2">--</h2></div>
-        <div class="card"><h3>CO2</h3><h2 id="gas">--</h2></div>
+        <div class="card"><h3>Suhu Toples 1</h3><h2 id="t1">--</h2></div>
+        <div class="card"><h3>Suhu Toples 2</h3><h2 id="t2">--</h2></div>
+        <div class="card"><h3>Kadar Gas CO2</h3><h2 id="gas">--</h2></div>
         <div class="card"><h3>Kondisi</h3><h2 id="kondisi">--</h2></div>
     </div>
 
-    <div class="charts">
-        <div class="chart-box"><canvas id="chartSuhu"></canvas></div>
+    <div class="charts-wrapper">
+        <div class="chart-box"><canvas id="chartT1"></canvas></div>
+        <div class="chart-box"><canvas id="chartT2"></canvas></div>
         <div class="chart-box"><canvas id="chartCO2"></canvas></div>
     </div>
 
     <div class="table-container">
+        <h3 style="color: var(--blue); text-align: left;">Log Riwayat Data</h3>
         <table>
-            <thead><tr><th>Waktu</th><th>T1</th><th>T2</th><th>CO2</th><th>Status</th></tr></thead>
+            <thead><tr><th>Waktu</th><th>T1 (°C)</th><th>T2 (°C)</th><th>CO2 (PPM)</th><th>Master Switch</th></tr></thead>
             <tbody id="logTable"></tbody>
         </table>
     </div>
@@ -76,87 +93,94 @@
         const firebaseConfig = { apiKey: "AIzaSyDJYC1QX0x2yojtpMpldnLB0Eano17Rud0", databaseURL: "https://kombucha-iot-bff2b-default-rtdb.asia-southeast1.firebasedatabase.app/" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        
-        let audioIzin = false, overlayDitutupManual = false, updateTimer = 5000, intervalFungsi;
 
-        // Fungsi Tes Suara Paksa
-        function tesBicara() {
-            window.speechSynthesis.cancel();
-            let msg = new SpeechSynthesisUtterance("Sistem siap digunakan");
-            window.speechSynthesis.speak(msg);
-            audioIzin = true;
-        }
+        let audioUnlocked = false, alarmDismis = false, intervalTimer = 5000, loopInterval;
 
-        function paksaAktifkanSuara() {
-            if(!audioIzin) {
-                let msg = new SpeechSynthesisUtterance("");
-                window.speechSynthesis.speak(msg);
-                audioIzin = true;
-                console.log("Audio Aktif!");
+        // BUKA KUNCI AUDIO (Wajib diklik sekali saat web terbuka)
+        function bukaKunciAudio() {
+            if(!audioUnlocked) {
+                audioUnlocked = true;
+                document.getElementById("audioStatus").innerText = "✅ Audio Siap (Otomatis)";
+                document.getElementById("audioStatus").style.color = "green";
+                // Pancingan suara kosong
+                window.speechSynthesis.speak(new SpeechSynthesisUtterance(""));
             }
         }
 
-        function tutupOverlay() { 
-            overlayDitutupManual = true; 
-            document.getElementById("overlayBahaya").style.display = "none"; 
-            window.speechSynthesis.cancel(); 
-        }
-
+        function tutupAlarm() { alarmDismis = true; document.getElementById("overlayBahaya").style.display = "none"; window.speechSynthesis.cancel(); }
         function setPower(v) { db.ref("kombucha/power").set(v); }
-        function updateInterval() { updateTimer = document.getElementById("inputDetik").value * 1000; clearInterval(intervalFungsi); mulaiLooping(); }
+        function updateInterval() { intervalTimer = document.getElementById("inputDetik").value * 1000; clearInterval(loopInterval); mulaiSiklus(); }
 
-        const chartSuhu = new Chart(document.getElementById('chartSuhu'), { type: 'line', data: { labels: [], datasets: [{ label: 'T1', data: [], borderColor: 'red' }, { label: 'T2', data: [], borderColor: 'blue' }] } });
-        const chartCO2 = new Chart(document.getElementById('chartCO2'), { type: 'line', data: { labels: [], datasets: [{ label: 'CO2', data: [], borderColor: 'green' }] } });
+        // Setup 3 Grafik Terpisah
+        const ctx1 = document.getElementById('chartT1').getContext('2d');
+        const ctx2 = document.getElementById('chartT2').getContext('2d');
+        const ctx3 = document.getElementById('chartCO2').getContext('2d');
 
+        const chartT1 = new Chart(ctx1, { type: 'line', data: { labels: [], datasets: [{ label: 'Suhu T1', data: [], borderColor: 'red', fill: false }] } });
+        const chartT2 = new Chart(ctx2, { type: 'line', data: { labels: [], datasets: [{ label: 'Suhu T2', data: [], borderColor: 'blue', fill: false }] } });
+        const chartCO2 = new Chart(ctx3, { type: 'line', data: { labels: [], datasets: [{ label: 'Kadar CO2', data: [], borderColor: 'green', fill: true, backgroundColor: 'rgba(39,174,96,0.1)' }] } });
+
+        // Monitoring Realtime
         db.ref("kombucha").on("value", (snap) => {
-            const d = snap.val(); if(!d) return;
-            const s1 = parseFloat(d.temperature1 || 0);
-            const s2 = parseFloat(d.temperature2 || 0).toFixed(1);
-            const co2 = d.co2 || 0;
-            
-            document.getElementById("t1").innerText = s1.toFixed(1) + "°C";
-            document.getElementById("t2").innerText = (s2 == 0) ? "OFF" : s2 + "°C";
-            document.getElementById("gas").innerText = co2 + " PPM";
-            document.getElementById("statusSistem").innerText = (d.power == 1) ? "START" : "STOP";
+            const data = snap.val(); if(!data) return;
+            const s1 = parseFloat(data.temperature1 || 0);
+            const s2 = parseFloat(data.temperature2 || 0);
+            const co2 = data.co2 || 0;
+            const pwr = data.power;
 
+            document.getElementById("t1").innerText = s1.toFixed(1) + "°C";
+            document.getElementById("t2").innerText = s2.toFixed(1) + "°C";
+            document.getElementById("gas").innerText = co2 + " PPM";
+            document.getElementById("kondisi").innerText = (s1 >= 24 && s1 <= 28) ? "STABIL" : "BAHAYA";
+            document.getElementById("kondisi").style.color = (s1 >= 24 && s1 <= 28) ? "green" : "red";
+
+            // LOGIKA BAHAYA & SUARA OTOMATIS
             const overlay = document.getElementById("overlayBahaya");
             if (s1 < 24.0 || s1 > 28.0) {
-                document.getElementById("kondisi").innerText = "BAHAYA";
-                document.getElementById("kondisi").style.color = "red";
-                document.getElementById("infoSuhu").innerText = "Suhu Terukur: " + s1.toFixed(1) + "°C";
-                
-                if (!overlayDitutupManual) {
+                if(!alarmDismis) {
                     overlay.style.display = "block";
-                    // LOGIKA SUARA PAKSA
-                    if(audioIzin && !window.speechSynthesis.speaking) {
-                        window.speechSynthesis.cancel(); 
-                        let m = new SpeechSynthesisUtterance("Bahaya, suhu tidak stabil");
-                        window.speechSynthesis.speak(m);
+                    document.getElementById("teksBahaya").innerText = "Suhu Toples 1: " + s1.toFixed(1) + "°C";
+                    if(audioUnlocked && !window.speechSynthesis.speaking) {
+                        let m = new SpeechSynthesisUtterance("Peringatan, suhu bahaya!");
+                        m.lang = "id-ID"; window.speechSynthesis.speak(m);
                     }
                 }
             } else {
                 overlay.style.display = "none";
-                overlayDitutupManual = false;
-                document.getElementById("kondisi").innerText = "STABIL";
-                document.getElementById("kondisi").style.color = "green";
+                alarmDismis = false;
                 window.speechSynthesis.cancel();
             }
         });
 
-        function mulaiLooping() {
-            intervalFungsi = setInterval(() => {
-                const status = document.getElementById("statusSistem").innerText;
-                if (status === "START") {
-                    const t = new Date().toLocaleTimeString(), s1 = document.getElementById("t1").innerText, s2 = document.getElementById("t2").innerText, c = document.getElementById("gas").innerText;
-                    if(chartSuhu.data.labels.length > 10) { chartSuhu.data.labels.shift(); chartSuhu.data.datasets[0].data.shift(); chartSuhu.data.datasets[1].data.shift(); chartCO2.data.labels.shift(); chartCO2.data.datasets[0].data.shift(); }
-                    chartSuhu.data.labels.push(t); chartSuhu.data.datasets[0].data.push(parseFloat(s1)); chartSuhu.data.datasets[1].data.push(parseFloat(s2)); chartSuhu.update();
-                    chartCO2.data.labels.push(t); chartCO2.data.datasets[0].data.push(parseFloat(c)); chartCO2.update();
-                    document.getElementById("logTable").insertAdjacentHTML('afterbegin', `<tr><td>${t}</td><td>${s1}</td><td>${s2}</td><td>${c}</td><td>START</td></tr>`);
-                    if(document.getElementById("logTable").rows.length > 5) document.getElementById("logTable").deleteRow(5);
-                }
-            }, updateTimer);
+        // Siklus Grafik & Tabel (Terkunci Tombol Start/Stop)
+        function mulaiSiklus() {
+            loopInterval = setInterval(() => {
+                // Ambil status power langsung dari tampilan (yg disinkronkan Firebase)
+                const statusAktuator = document.getElementById("kondisi").parentElement.parentElement.querySelector('.nav-container button.btn-stop'); 
+                // Cek status power dari Firebase via status text
+                db.ref("kombucha/power").once("value", (s) => {
+                    if (s.val() === 1) {
+                        const t = new Date().toLocaleTimeString();
+                        const v1 = document.getElementById("t1").innerText;
+                        const v2 = document.getElementById("t2").innerText;
+                        const c = document.getElementById("gas").innerText;
+
+                        // Update Charts
+                        [chartT1, chartT2, chartCO2].forEach(chart => { if(chart.data.labels.length > 10) { chart.data.labels.shift(); chart.data.datasets[0].data.shift(); } });
+                        
+                        chartT1.data.labels.push(t); chartT1.data.datasets[0].data.push(parseFloat(v1)); chartT1.update();
+                        chartT2.data.labels.push(t); chartT2.data.datasets[0].data.push(parseFloat(v2)); chartT2.update();
+                        chartCO2.data.labels.push(t); chartCO2.data.datasets[0].data.push(parseFloat(c)); chartCO2.update();
+
+                        // Update Table
+                        const row = `<tr><td>${t}</td><td>${v1}</td><td>${v2}</td><td>${c}</td><td><b style="color:green">START</b></td></tr>`;
+                        document.getElementById("logTable").insertAdjacentHTML('afterbegin', row);
+                        if(document.getElementById("logTable").rows.length > 5) document.getElementById("logTable").deleteRow(5);
+                    }
+                });
+            }, intervalTimer);
         }
-        mulaiLooping();
+        mulaiSiklus();
     </script>
 </body>
 </html>
